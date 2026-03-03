@@ -62,7 +62,10 @@ export default class MpqFile {
    * An exception will be thrown if the file needs to be decoded, and decoding fails.
    */
   arrayBuffer(): ArrayBuffer {
-    return this.bytes().buffer;
+    const bytes = this.bytes();
+    const arrayBuffer = new ArrayBuffer(bytes.byteLength);
+    new Uint8Array(arrayBuffer).set(bytes);
+    return arrayBuffer;
   }
 
   /**
