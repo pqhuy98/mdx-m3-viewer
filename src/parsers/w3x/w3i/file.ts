@@ -114,9 +114,12 @@ export default class War3MapW3i {
       this.unknown1 = stream.readUint32();
     }
 
-    if (this.version > 32) {
+    if (this.version >= 32) {
       this.defaultCameraZoom = stream.readUint32();
       this.maxCameraZoom = stream.readUint32();
+    }
+
+    if (this.version >= 33) {
       this.minCameraZoom = stream.readUint32();
     }
 
@@ -230,9 +233,12 @@ export default class War3MapW3i {
       stream.writeUint32(this.unknown1);
     }
 
-    if (this.version > 32) {
+    if (this.version >= 32) {
       stream.writeUint32(this.defaultCameraZoom);
       stream.writeUint32(this.maxCameraZoom);
+    }
+
+    if (this.version >= 33) {
       stream.writeUint32(this.minCameraZoom);
     }
 

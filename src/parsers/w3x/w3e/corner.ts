@@ -17,7 +17,7 @@ export default class Corner {
   cliffTexture = 0;
   layerHeight = 0;
 
-  load(stream: BinaryStream): void {
+  load(stream: BinaryStream, version: number): void {
     this.groundHeight = (stream.readInt16() - 8192) / 512;
 
     const waterAndEdge = stream.readInt16();
@@ -25,14 +25,24 @@ export default class Corner {
     this.waterHeight = ((waterAndEdge & 0x3FFF) - 8192) / 512;
     this.mapEdge = waterAndEdge & 0x4000;
 
-    const textureAndFlags = stream.readUint8();
+    if (version >= 12) {
+      const textureAndFlags = stream.readInt16();
 
-    this.ramp = textureAndFlags & 0b00010000;
-    this.blight = textureAndFlags & 0b00100000;
-    this.water = textureAndFlags & 0b01000000;
-    this.boundary = textureAndFlags & 0b10000000;
+      this.groundTexture = textureAndFlags & 0x3F;
+      this.ramp = textureAndFlags & 0x40;
+      this.blight = textureAndFlags & 0x80;
+      this.water = textureAndFlags & 0x100;
+      this.boundary = textureAndFlags & 0x200;
+    } else {
+      const textureAndFlags = stream.readUint8();
 
-    this.groundTexture = textureAndFlags & 0b00001111;
+      this.ramp = textureAndFlags & 0b00010000;
+      this.blight = textureAndFlags & 0b00100000;
+      this.water = textureAndFlags & 0b01000000;
+      this.boundary = textureAndFlags & 0b10000000;
+
+      this.groundTexture = textureAndFlags & 0b00001111;
+    }
 
     const variation = stream.readUint8();
 
@@ -45,11 +55,33 @@ export default class Corner {
     this.layerHeight = cliffTextureAndLayer & 0b00001111;
   }
 
-  save(stream: BinaryStream): void {
+  save(stream: BinaryStream, version: number): void {
     stream.writeInt16(this.groundHeight * 512 + 8192);
     stream.writeInt16(this.waterHeight * 512 + 8192 + this.mapEdge << 14);
-    stream.writeUint8((this.ramp << 4) | (this.blight << 5) | (this.water << 6) | (this.boundary << 7) | this.groundTexture);
+
+    if (version >= 12) {
+      stream.writeInt16(
+        this.groundTexture
+        | this.ramp
+        | this.blight
+        | this.water
+        | this.boundary,
+      );
+    } else {
+      stream.writeUint8(
+        (this.ramp << 4)
+        | (this.blight << 5)
+        | (this.water << 6)
+        | (this.boundary << 7)
+        | this.groundTexture,
+      );
+    }
+
     stream.writeUint8((this.cliffVariation << 5) | this.groundVariation);
     stream.writeUint8((this.cliffTexture << 4) + this.layerHeight);
+  }
+
+  static getByteLength(version: number): number {
+    return version >= 12 ? 8 : 7;
   }
 }
